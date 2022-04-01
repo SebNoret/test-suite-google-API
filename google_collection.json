@@ -1,0 +1,748 @@
+{
+	"info": {
+		"_postman_id": "613fa738-f7cc-451a-bfcf-fc62f05185d6",
+		"name": "Projet 2 : Tests API Google Books",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "LIST Books",
+			"item": [
+				{
+					"name": "cas passants",
+					"item": [
+						{
+							"name": "Recherche par mots-clé limité à 10 résultats",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Vérifie si le code de statut est égal à 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"const response= pm.response.json()\r",
+											"pm.test(\"Récupérer un nombre d'items inférieur à 41\", () => {\r",
+											"    pm.expect(response.items.length).to.be.lt(41)\r",
+											"})\r",
+											"\r",
+											"pm.test(\"Récupérer 40 résultats\", () => {\r",
+											"    pm.expect(String(response.items.length)).to.be.eq(pm.collectionVariables.get(\"maxResults\"))\r",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/?q={{keyWord}}&maxResults={{maxResults}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "{{keyWord}}"
+										},
+										{
+											"key": "maxResults",
+											"value": "{{maxResults}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Recherche par titre d'ouvrage",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"\r",
+											"//récupération d'un identifiant de livre pour tester la recherche d'ouvrage unique\r",
+											"const bookId= pm.response.json().items[0].id\r",
+											"pm.collectionVariables.set(\"bookId\", bookId)\r",
+											"\r",
+											"\r",
+											"pm.test(\"Le code de statut en égal à 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"   \r",
+											"pm.test(\"Tous les items de la liste ont dans leur titre ou leur sous-titre une chaîne de caractères correspondant à celle envoyée dans la requête\", function(){\r",
+											"\r",
+											"    const response= pm.response.json()\r",
+											"    let titleToFind= pm.collectionVariables.get(\"bookTitle\")\r",
+											"/*\r",
+											"prepare query varaible to comparison    \r",
+											"use lodash library  deburr method  and regex to discard accents and ponctuation  in query variable \r",
+											"transforme queyr varaible to upper case\r",
+											"*/\r",
+											"    \r",
+											"function includesString(strTotest, testedStr){\r",
+											"    const regex = /[!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~’]/g;\r",
+											"    // let titi=strTotest.normalize('NFD').replace(/[\\u0300-\\u036f]/g, \"\").toLowerCase()\r",
+											"    // let toto=testedStr.normalize('NFD').replace(/[\\u0300-\\u036f]/g, \"\").toLowerCase()\r",
+											"\r",
+											"    strTotest=_.deburr(strTotest).toLowerCase().replace(regex, ' ');\r",
+											"    testedStr=_.deburr(testedStr).toLowerCase().replace(regex, ' ');\r",
+											"     console.log(\"var_1\", strTotest,\"var_2\",testedStr, \"test de validation\",strTotest.includes(testedStr))\r",
+											"    return strTotest.includes(testedStr)\r",
+											"}\r",
+											"\r",
+											"  \r",
+											"   \r",
+											"  \r",
+											"\r",
+											"/**\r",
+											" * \r",
+											" * function that returns an array of boolean if title of item in response ocntains the variable\r",
+											" *  */    \r",
+											"    const booleanTitleArray= response.items.map((item)=> includesString(item.volumeInfo.title,titleToFind))\r",
+											" \r",
+											"/**\r",
+											" * function that returns an array of boolean if subtitle of item in response ocntains the variable\r",
+											" * if subtitle is undefined return false \r",
+											" */\r",
+											"    \r",
+											"    const booleanSubtitleArray= response.items.map((item)=>item.volumeInfo.subtitle)\r",
+											"    .map((subtitle)=>typeof subtitle === \"undefined\" ? false : subtitle)\r",
+											"    .map((subtitle)=>includesString(subtitle, titleToFind))\r",
+											"\r",
+											"   \r",
+											"/**\r",
+											" * \r",
+											" * function that adds merges the two arrays of boolean values with the OR operator\r",
+											" * will be use in the assertion\r",
+											" */\r",
+											"    const mergeArrays= ()=>{\r",
+											"        const mergedArr=[booleanTitleArray, booleanSubtitleArray]\r",
+											"    \r",
+											"        const arrayToTest=mergedArr.reduce((acc, item)=>{\r",
+											"            item.forEach((bool, index)=>{\r",
+											"                acc[index]=acc[index] || bool\r",
+											"            })\r",
+											"            return acc\r",
+											"        },[])\r",
+											"        return arrayToTest\r",
+											"    }\r",
+											" \r",
+											"    pm.expect(mergeArrays().includes(false)).to.be.eq(false)\r",
+											"\r",
+											"})\r",
+											"\r",
+											"const schema={\r",
+											"\t\"definitions\": {},\r",
+											"\t\"$schema\": \"http://json-schema.org/draft-07/schema#\", \r",
+											"\t\"$id\": \"https://example.com/object1648632831.json\", \r",
+											"\t\"title\": \"Root\", \r",
+											"\t\"type\": \"object\",\r",
+											"\t\"properties\": {\r",
+											"\t\t\"kind\": {\r",
+											"\t\t\t\"$id\": \"#root/kind\", \r",
+											"\t\t\t\"title\": \"Kind\", \r",
+											"\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\"default\": \"\",\r",
+											"\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t},\r",
+											"\t\t\"totalItems\": {\r",
+											"\t\t\t\"$id\": \"#root/totalItems\", \r",
+											"\t\t\t\"title\": \"Totalitems\", \r",
+											"\t\t\t\"type\": \"integer\",\r",
+											"\t\t\t\"default\": 0\r",
+											"\t\t},\r",
+											"\t\t\"items\": {\r",
+											"\t\t\t\"$id\": \"#root/items\", \r",
+											"\t\t\t\"title\": \"Items\", \r",
+											"\t\t\t\"type\": \"array\",\r",
+											"\t\t\t\"default\": [],\r",
+											"\t\t\t\"items\":{\r",
+											"\t\t\t\t\"$id\": \"#root/items/items\", \r",
+											"\t\t\t\t\"title\": \"Items\", \r",
+											"\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\"kind\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/kind\", \r",
+											"\t\t\t\t\t\t\"title\": \"Kind\", \r",
+											"\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t},\r",
+											"\t\t\t\t\t\"id\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/id\", \r",
+											"\t\t\t\t\t\t\"title\": \"Id\", \r",
+											"\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t},\r",
+											"\t\t\t\t\t\"etag\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/etag\", \r",
+											"\t\t\t\t\t\t\"title\": \"Etag\", \r",
+											"\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t},\r",
+											"\t\t\t\t\t\"selfLink\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/selfLink\", \r",
+											"\t\t\t\t\t\t\"title\": \"Selflink\", \r",
+											"\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t},\r",
+											"\t\t\t\t\t\"volumeInfo\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo\", \r",
+											"\t\t\t\t\t\t\"title\": \"Volumeinfo\", \r",
+											"\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\"title\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/title\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Title\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"authors\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/authors\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Authors\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"array\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": [],\r",
+											"\t\t\t\t\t\t\t\t\"items\":{\r",
+											"\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/authors/items\", \r",
+											"\t\t\t\t\t\t\t\t\t\"title\": \"Items\", \r",
+											"\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"publishedDate\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/publishedDate\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Publisheddate\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"industryIdentifiers\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/industryIdentifiers\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Industryidentifiers\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"array\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": [],\r",
+											"\t\t\t\t\t\t\t\t\"items\":{\r",
+											"\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/industryIdentifiers/items\", \r",
+											"\t\t\t\t\t\t\t\t\t\"title\": \"Items\", \r",
+											"\t\t\t\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/industryIdentifiers/items/type\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"title\": \"Type\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\t\t\t\"identifier\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/industryIdentifiers/items/identifier\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"title\": \"Identifier\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"readingModes\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/readingModes\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Readingmodes\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\t\t\"text\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/readingModes/text\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Text\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\t\t\"image\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/readingModes/image\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Image\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\t\t\"pageCount\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/pageCount\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Pagecount\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"integer\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": 0\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"printType\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/printType\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Printtype\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"maturityRating\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/maturityRating\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Maturityrating\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"allowAnonLogging\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/allowAnonLogging\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Allowanonlogging\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"contentVersion\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/contentVersion\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Contentversion\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"panelizationSummary\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/panelizationSummary\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Panelizationsummary\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\t\t\"containsEpubBubbles\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/panelizationSummary/containsEpubBubbles\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Containsepubbubbles\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\t\t\"containsImageBubbles\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/panelizationSummary/containsImageBubbles\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Containsimagebubbles\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\t\t\"imageLinks\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/imageLinks\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Imagelinks\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\t\t\"smallThumbnail\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/imageLinks/smallThumbnail\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Smallthumbnail\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\t\t\"thumbnail\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/imageLinks/thumbnail\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Thumbnail\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\t\t\"language\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/language\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Language\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"previewLink\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/previewLink\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Previewlink\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"infoLink\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/infoLink\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Infolink\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"canonicalVolumeLink\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/volumeInfo/canonicalVolumeLink\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Canonicalvolumelink\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\"saleInfo\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/saleInfo\", \r",
+											"\t\t\t\t\t\t\"title\": \"Saleinfo\", \r",
+											"\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\"country\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/saleInfo/country\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Country\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"saleability\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/saleInfo/saleability\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Saleability\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"isEbook\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/saleInfo/isEbook\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Isebook\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"buyLink\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/saleInfo/buyLink\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Buylink\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\"accessInfo\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo\", \r",
+											"\t\t\t\t\t\t\"title\": \"Accessinfo\", \r",
+											"\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\"country\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/country\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Country\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"viewability\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/viewability\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Viewability\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"embeddable\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/embeddable\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Embeddable\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"publicDomain\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/publicDomain\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Publicdomain\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"textToSpeechPermission\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/textToSpeechPermission\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Texttospeechpermission\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"epub\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/epub\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Epub\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\t\t\"isAvailable\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/epub/isAvailable\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Isavailable\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\t\t\"downloadLink\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/epub/downloadLink\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Downloadlink\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\t\t\"pdf\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/pdf\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Pdf\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\t\t\"isAvailable\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/pdf/isAvailable\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Isavailable\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\t\t\"downloadLink\": {\r",
+											"\t\t\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/pdf/downloadLink\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"title\": \"Downloadlink\", \r",
+											"\t\t\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\t\t\"webReaderLink\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/webReaderLink\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Webreaderlink\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"accessViewStatus\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/accessViewStatus\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Accessviewstatus\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t},\r",
+											"\t\t\t\t\t\t\t\"quoteSharingAllowed\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/accessInfo/quoteSharingAllowed\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Quotesharingallowed\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"boolean\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": true\r",
+											"\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t}\r",
+											",\r",
+											"\t\t\t\t\t\"searchInfo\": {\r",
+											"\t\t\t\t\t\t\"$id\": \"#root/items/items/searchInfo\", \r",
+											"\t\t\t\t\t\t\"title\": \"Searchinfo\", \r",
+											"\t\t\t\t\t\t\"type\": \"object\",\r",
+											"\t\t\t\t\t\t\"properties\": {\r",
+											"\t\t\t\t\t\t\t\"textSnippet\": {\r",
+											"\t\t\t\t\t\t\t\t\"$id\": \"#root/items/items/searchInfo/textSnippet\", \r",
+											"\t\t\t\t\t\t\t\t\"title\": \"Textsnippet\", \r",
+											"\t\t\t\t\t\t\t\t\"type\": \"string\",\r",
+											"\t\t\t\t\t\t\t\t\"default\": \"\",\r",
+											"\t\t\t\t\t\t\t\t\"pattern\": \"^.*$\"\r",
+											"\t\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t\t}\r",
+											"\t\t\t\t\t}\r",
+											"\r",
+											"\t\t\t\t}\r",
+											"\t\t\t}\r",
+											"\r",
+											"\t\t}\r",
+											"\t}\r",
+											"}\r",
+											"\r",
+											"\r",
+											"\r",
+											"pm.test(\"Validation du schéma Json de la réponse\", () => {\r",
+											"    pm.response.to.have.jsonSchema(schema)\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}?q=intitle:{{bookTitle}}&maxResults={{maxResults}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "intitle:{{bookTitle}}"
+										},
+										{
+											"key": "maxResults",
+											"value": "{{maxResults}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "cas non passants",
+					"item": []
+				}
+			]
+		},
+		{
+			"name": "GET Books",
+			"item": [
+				{
+					"name": "cas passants",
+					"item": [
+						{
+							"name": "Recherche d'un livre grâce à son identifiant",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const bookId= pm.collectionVariables.get(\"bookId\")"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/:bookId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										":bookId"
+									],
+									"variable": [
+										{
+											"key": "bookId",
+											"value": "pm.collectionVariables.get(\"bookId\")"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "cas non passants",
+					"item": [
+						{
+							"name": "Recherche d'un livre avec identifiant qui n'existe pas",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"le serveur renvoie un code d'erreur 503\", function(){\r",
+											" pm.response.to.have.status(503);\r",
+											"})\r",
+											"\r",
+											"pm.test(\"Le message d'erreur indique un service temporairement innaccessible\", function(){\r",
+											"    const response= pm.response.json();\r",
+											"    pm.expect(response.error.message).to.be.eq(\"Service temporarily unavailable.\")\r",
+											"})"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const bookId= pm.collectionVariables.get(\"bookId\")"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/:{{fakeBookId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										":{{fakeBookId}}"
+									],
+									"variable": [
+										{
+											"key": "{{fakeBookId}}",
+											"value": null
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://www.googleapis.com/books/v1/volumes",
+			"type": "string"
+		},
+		{
+			"key": "maxResults",
+			"value": "10",
+			"type": "string"
+		},
+		{
+			"key": "keyWord",
+			"value": "la bible",
+			"type": "string"
+		},
+		{
+			"key": "bookTitle",
+			"value": "la bible",
+			"type": "string"
+		},
+		{
+			"key": "bookId",
+			"value": ""
+		},
+		{
+			"key": "fakeBookId",
+			"value": "aezrazerazerazer",
+			"type": "string"
+		}
+	]
+}
