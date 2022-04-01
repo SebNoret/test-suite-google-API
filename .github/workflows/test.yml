@@ -1,6 +1,6 @@
-name: Execution des tests avec newman action
+name: Execution des tests avec npm
 
-on: [workflow_dispatch]
+on: [push, workflow_dispatch]
 
 jobs:
   test:
@@ -9,7 +9,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Tests execution
-        uses: matt-ball/newman-action@master
+      - name: Install dependencies
+        run: npm install --global newman newman-reporter-htmlextra
+
+      - name: Run Postman tests
+        run: newman run "google_collection.json" -r cli,junit,htmlextra
+
+      - name: Publish JUnit reports
+        uses: dorny/test-reporter@v1
+        if: always()
         with:
-          collection: google_collection.json
+          name: API tests # Name of the check run which will be created
+          path: newman/*.xml # Path to test results
+          reporter: java-junit
+      - name: Publier le rapport HTML
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-report-${{ github.run_id }}
+          path: newman/*.html
