@@ -12,4 +12,4 @@ jobs:
       - name: Tests execution
         uses: matt-ball/newman-action@master
         with:
-          collection: gooogle_collection.json
+          collection: google_collection.json
